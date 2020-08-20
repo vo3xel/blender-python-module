@@ -27,7 +27,7 @@ USER blender
 # clone blender and switch to specific blender release version
 RUN mkdir -p /home/blender/blender-git
 WORKDIR /home/blender/blender-git
-RUN git clone --recursive --branch blender-v${BLENDER_VERSION} http://git.blender.org/blender.git
+RUN git clone --recursive --branch v${BLENDER_VERSION} http://git.blender.org/blender.git
 WORKDIR /home/blender/blender-git/blender
 
 # build blender dependencies
