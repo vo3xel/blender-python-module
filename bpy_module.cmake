@@ -32,6 +32,6 @@ set(WITH_ALEMBIC             OFF CACHE BOOL "" FORCE)
 set(WITH_MEM_JEMALLOC        OFF CACHE BOOL "" FORCE)
 set(WITH_OPENMP              OFF CACHE BOOL "" FORCE)
 set(WITH_OPENMP_STATIC       ON CACHE BOOL "" FORCE)
-
+set(WITH_OPENSUBDIV          ON CACHE BOOL "" FORCE)
 # Depends on Python install, do this to quiet warning.
 set(WITH_DRACO               OFF CACHE BOOL "" FORCE)
