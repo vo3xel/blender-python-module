@@ -45,4 +45,4 @@ RUN make
 COPY ./bpy_module.cmake /home/blender/blender-git/blender/build_files/cmake/config/bpy_module.cmake
 RUN make bpy
 
-# python3 -c "import bpy ; bpy.ops.render.render(write_still=True)"
+RUN python3 -c "import bpy ; bpy.ops.render.render(write_still=True)"
