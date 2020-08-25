@@ -38,7 +38,7 @@ RUN svn checkout https://svn.blender.org/svnroot/bf-blender/trunk/lib/linux_cent
 
 # build blender full
 WORKDIR /home/blender/blender-git/blender
-RUN git checkout v2.83.5
+RUN git checkout --recurse-submodules v2.83.5
 RUN git submodule foreach git pull origin v2.83.5
 RUN make
 
