@@ -38,7 +38,7 @@ RUN svn checkout https://svn.blender.org/svnroot/bf-blender/trunk/lib/linux_cent
 
 # build blender full
 WORKDIR /home/blender/blender-git/blender
-RUN make update
+RUN git checkout --recurse-submodules v2.83.5
 RUN make
 
 # copy adapted bpy cmake file
