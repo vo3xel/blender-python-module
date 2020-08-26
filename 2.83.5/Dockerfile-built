@@ -5,7 +5,7 @@ WORKDIR /home/blender/blender-git/blender
 RUN make
 
 # copy adapted bpy cmake file
-#COPY ./bpy_module.cmake /home/blender/blender-git/blender/build_files/cmake/config/bpy_module.cmake
-#RUN make bpy
+COPY ./bpy_module.cmake /home/blender/blender-git/blender/build_files/cmake/config/bpy_module.cmake
+RUN make bpy
 
-#RUN python3 -c "import bpy ; bpy.ops.render.render(write_still=True)"
+ENV PYTHONPATH="${PYTHONPATH}:/home/blender/blender-git/lib/linux_centos7_x86_64/python/lib/python3.7/site-packages"
