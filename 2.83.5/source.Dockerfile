@@ -12,7 +12,7 @@ ENV BLENDER_VERSION 2.83.5
 ARG DEBIAN_FRONTEND=noninteractive
 
 # install necessary packages
-RUN apt-get update && apt-get -y install apt-utils software-properties-common build-essential \
+RUN apt-get update && apt-get -y install curl apt-utils software-properties-common build-essential \
 	git subversion cmake libx11-dev libxxf86vm-dev libxcursor-dev \
 	libxi-dev libxrandr-dev libxinerama-dev libglew-dev \
 	&& rm -rf /var/lib/apt/lists/*
@@ -20,6 +20,7 @@ RUN apt-get update && apt-get -y install apt-utils software-properties-common bu
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get update && apt-get -y install python3.7
 RUN rm /usr/bin/python3 && ln -s python3.7 /usr/bin/python3
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3
 
 # user management
 RUN groupadd -g 999 blender && useradd -u 999 -g blender -G sudo -m -s /bin/bash blender
