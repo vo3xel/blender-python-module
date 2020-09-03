@@ -38,6 +38,7 @@ RUN svn checkout https://svn.blender.org/svnroot/bf-blender/trunk/lib/linux_cent
 # build blender as python module
 WORKDIR /home/blender/blender-git/blender
 RUN make update
+COPY ./bpy_module.cmake /blender/build_files/cmake/config/bpy_module.cmake
 RUN make bpy
 
 ENV PYTHONPATH="${PYTHONPATH}:/home/blender/blender-git/lib/linux_centos7_x86_64/python/lib/python3.7/site-packages"
