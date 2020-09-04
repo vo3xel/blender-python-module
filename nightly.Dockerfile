@@ -11,7 +11,8 @@ ENV LC_ALL C.UTF-8
 ARG DEBIAN_FRONTEND=noninteractive
 
 # install necessary packages
-RUN apt-get update && apt-get -y install bison autoconf automake libtool yasm nasm tcl \
+RUN apt-get update && apt-get -y install \ 
+	bison autoconf automake libtool yasm nasm tcl libasound2-dev \
 	curl apt-utils software-properties-common build-essential \
 	git subversion cmake libx11-dev libxxf86vm-dev libxcursor-dev \
 	libxi-dev libxrandr-dev libxinerama-dev libglew-dev \
