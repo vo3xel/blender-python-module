@@ -31,14 +31,14 @@ WORKDIR /home/blender/blender-git
 RUN git clone http://git.blender.org/blender.git
 
 # download precompiled libs
-RUN mkdir -p /home/blender/blender-git/lib
-WORKDIR /home/blender/blender-git/lib
-RUN svn checkout https://svn.blender.org/svnroot/bf-blender/trunk/lib/linux_centos7_x86_64
+# RUN mkdir -p /home/blender/blender-git/lib
+# WORKDIR /home/blender/blender-git/lib
+# RUN svn checkout https://svn.blender.org/svnroot/bf-blender/trunk/lib/linux_centos7_x86_64
 
 # build blender as python module
 WORKDIR /home/blender/blender-git/blender
 RUN make update
-COPY ./bpy_module.cmake /home/blender/blender-git/blender/build_files/cmake/config/bpy_module.cmake
+RUN make deps
 RUN make bpy
 
 ENV PYTHONPATH="${PYTHONPATH}:/home/blender/blender-git/lib/linux_centos7_x86_64/python/lib/python3.7/site-packages"
