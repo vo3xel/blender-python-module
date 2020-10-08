@@ -7,7 +7,7 @@ ENV LANGUAGE C.UTF-8
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 
-ENV BLENDER_VERSION 2.83.5
+ENV BLENDER_VERSION 2.83.7
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -30,6 +30,7 @@ USER blender
 RUN mkdir -p /home/blender/blender-git
 WORKDIR /home/blender/blender-git
 RUN git clone http://git.blender.org/blender.git
+RUN git checkout v${BLENDER_VERSION}
 
 # download precompiled libs
 RUN mkdir -p /home/blender/blender-git/lib
