@@ -11,4 +11,4 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build the Docker image
-      run: docker build . --file nightly.Dockerfile --tag blender-lts-python-module:$(date +%s)
+      run: docker build . --file nightly-precompiled-deps.Dockerfile --tag blender-lts-python-module:nightly-precompiled-deps-$(date +%s)
