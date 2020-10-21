@@ -16,7 +16,7 @@ RUN apt-get update && apt-get -y install \
 	libsndio-dev portaudio19-dev libportaudio2 pulseaudio libpulse-dev \
 	curl apt-utils software-properties-common build-essential \
 	git subversion cmake libx11-dev libxxf86vm-dev libxcursor-dev \
-	libxi-dev libxrandr-dev libxinerama-dev libglew-dev \
+	libxi-dev libxrandr-dev libxinerama-dev libglew-dev xsltproc \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN add-apt-repository ppa:deadsnakes/ppa
