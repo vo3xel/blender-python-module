@@ -1,4 +1,4 @@
-# blender-lts-python-module
+# blender-python-module
 This repo builds blender as python module in a docker container.
 
 ## Usage
