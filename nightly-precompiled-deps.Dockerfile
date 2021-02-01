@@ -49,4 +49,4 @@ RUN mkdir -p /home/blender/data
 WORKDIR /home/blender/data
 
 ENTRYPOINT ["python3"]
-CMD ["-c","import bpy; bpy.ops.wm.save_as_mainfile(filepath='./my.blend'); print(bpy.app.version_string);"]
+CMD ["-c","import bpy; bpy.ops.wm.save_as_mainfile(filepath='/home/blender/my.blend'); print(bpy.app.version_string);"]
