@@ -15,7 +15,7 @@ RUN apt-get update && apt-get -y install \
 	bison autoconf automake libtool yasm nasm tcl libasound2-dev \
 	libsndio-dev portaudio19-dev libportaudio2 pulseaudio libpulse-dev \
 	curl apt-utils software-properties-common build-essential \
-	git subversion cmake libx11-dev libxxf86vm-dev libxcursor-dev \
+	git subversion cmake libx11-dev libxxf86vm-dev libxcursor-dev sudo \
 	libxi-dev libxrandr-dev libxinerama-dev libglew-dev xsltproc \
 	&& rm -rf /var/lib/apt/lists/*
 
