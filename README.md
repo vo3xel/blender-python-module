@@ -1,5 +1,3 @@
-![Blender as python module - nightly](https://github.com/vo3xel/blender-python-module/workflows/Blender%20as%20python%20module%20-%20nightly/badge.svg)
-
 # blender-python-module
 This repo builds blender as python module in a docker container.
 
