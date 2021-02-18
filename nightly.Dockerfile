@@ -1,7 +1,8 @@
-
 FROM ubuntu:focal
 
 LABEL maintainer="vo3xel@gmail.com"
+
+ARG BLENDER_VERSION_STRING
 
 ENV TERM linux
 ENV LANGUAGE C.UTF-8
@@ -9,6 +10,8 @@ ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 
 ARG DEBIAN_FRONTEND=noninteractive
+
+ENV BLENDER_VERSION=$BLENDER_VERSION_STRING
 
 # install necessary packages
 RUN apt-get update && apt-get -y install \ 
