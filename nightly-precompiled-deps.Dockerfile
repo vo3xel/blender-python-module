@@ -1,6 +1,6 @@
 FROM ubuntu:focal
 
-LABEL maintainer="vo3xel@gmail.com"
+LABEL maintainer="gh@v3x.xyz"
 
 ARG BLENDER_VERSION_STRING
 

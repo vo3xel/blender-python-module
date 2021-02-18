@@ -6,4 +6,4 @@ BLENDER_VERSION_CYCLE=$(curl -vs https://git.blender.org/gitweb/gitweb.cgi/blend
 
 BLENDER_VERSION_STRING="${BLENDER_MAJOR}.${BLENDER_MINOR}.${BLENDER_VERSION_PATCH}-${BLENDER_VERSION_CYCLE}"
 
-docker build --build-arg BLENDER_VERSION_STRING="$BLENDER_VERSION_STRING" -t vo3xel/blender-python-module:nightly-precompiled-deps-"$BLENDER_VERSION_STRING"-$(date +%s) -f nightly-precompiled-deps.Dockerfile .
+docker build --build-arg BLENDER_VERSION_STRING="$BLENDER_VERSION_STRING" -t vo3xel/blender-python-module:"$BLENDER_VERSION_STRING" -f nightly-precompiled-deps.Dockerfile .
