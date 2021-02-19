@@ -23,8 +23,8 @@ RUN apt-get update && apt-get -y install \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt-get update && apt-get -y install python3.7
-RUN rm /usr/bin/python3 && ln -s python3.7 /usr/bin/python3
+RUN apt-get update && apt-get -y install python3.9
+RUN rm /usr/bin/python3 && ln -s python3.9 /usr/bin/python3
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3
 
 # user management
@@ -46,7 +46,7 @@ WORKDIR /home/blender/blender-git/blender
 RUN make update
 RUN make bpy
 
-ENV PYTHONPATH="${PYTHONPATH}:/home/blender/blender-git/lib/linux_centos7_x86_64/python/lib/python3.7/site-packages"
+ENV PYTHONPATH="${PYTHONPATH}:/home/blender/blender-git/lib/linux_centos7_x86_64/python/lib/python3.9/site-packages"
 
 RUN mkdir -p /home/blender/data
 WORKDIR /home/blender/data
