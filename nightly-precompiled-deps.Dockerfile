@@ -23,7 +23,7 @@ RUN apt-get update && apt-get -y install \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt-get update && apt-get -y install python3.9
+RUN apt-get update && apt-get -y install python3.9 python3.9-dev
 RUN rm /usr/bin/python3 && ln -s python3.9 /usr/bin/python3
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3
 
