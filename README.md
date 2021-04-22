@@ -11,3 +11,8 @@ Please copy the python scripts into the `./data` folder and run it with `docker 
 ```
 docker run -v $PWD/data:/home/blender/data vo3xel/blender-python-module:2.93.0-alpha test.py
 ```
+## Acknowledgements
+* [Blender](https://www.blender.org/)
+* [Python](https://www.python.org/)
+* [Docker](https://www.docker.com)
+* [Postgres](https://www.postgresql.org/)
