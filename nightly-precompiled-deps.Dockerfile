@@ -28,10 +28,6 @@ RUN rm /usr/bin/python3 && ln -s python3.9 /usr/bin/python3
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3
 RUN pip install psycopg2-binary
 
-# user management
-RUN groupadd -g 999 blender && useradd -u 999 -g blender -G sudo -m -s /bin/bash blender
-USER blender
-
 # clone blender
 RUN mkdir -p /home/blender/blender-git
 WORKDIR /home/blender/blender-git
