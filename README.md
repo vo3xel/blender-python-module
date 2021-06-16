@@ -17,4 +17,4 @@ docker run -v $PWD/data:/home/blender/data vo3xel/blender-python-module:2.93.0-a
 * [Docker](https://www.docker.com)
 * [Postgres](https://www.postgresql.org/)
 
-## Acknoledgements
+## Acknowledgements
