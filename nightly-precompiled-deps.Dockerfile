@@ -1,7 +1,8 @@
-
 FROM ubuntu:focal
 
-LABEL maintainer="vo3xel@gmail.com"
+LABEL maintainer="gh@v3x.xyz"
+
+ARG BLENDER_VERSION_STRING
 
 ENV TERM linux
 ENV LANGUAGE C.UTF-8
@@ -9,6 +10,8 @@ ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 
 ARG DEBIAN_FRONTEND=noninteractive
+
+ENV BLENDER_VERSION=$BLENDER_VERSION_STRING
 
 # install necessary packages
 RUN apt-get update && apt-get -y install \ 
@@ -20,13 +23,10 @@ RUN apt-get update && apt-get -y install \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt-get update && apt-get -y install python3.7
-RUN rm /usr/bin/python3 && ln -s python3.7 /usr/bin/python3
+RUN apt-get update && apt-get -y install python3.9 python3.9-dev
+RUN rm /usr/bin/python3 && ln -s python3.9 /usr/bin/python3
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3
-
-# user management
-RUN groupadd -g 999 blender && useradd -u 999 -g blender -G sudo -m -s /bin/bash blender
-USER blender
+RUN pip install psycopg2-binary
 
 # clone blender
 RUN mkdir -p /home/blender/blender-git
@@ -43,10 +43,10 @@ WORKDIR /home/blender/blender-git/blender
 RUN make update
 RUN make bpy
 
-ENV PYTHONPATH="${PYTHONPATH}:/home/blender/blender-git/lib/linux_centos7_x86_64/python/lib/python3.7/site-packages"
+ENV PYTHONPATH="${PYTHONPATH}:/home/blender/blender-git/lib/linux_centos7_x86_64/python/lib/python3.9/site-packages"
 
 RUN mkdir -p /home/blender/data
 WORKDIR /home/blender/data
 
 ENTRYPOINT ["python3"]
-CMD ["-c","import bpy; bpy.ops.wm.save_as_mainfile(filepath='./my.blend'); print(bpy.app.version_string);"]
+CMD ["-c","import bpy; bpy.ops.wm.save_as_mainfile(filepath='/home/blender/my.blend'); print(bpy.app.version_string);"]
