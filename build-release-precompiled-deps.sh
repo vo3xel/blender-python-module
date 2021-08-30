@@ -1,21 +1,21 @@
 #!/bin/sh
-BLENDER_VERSION_STRING="2.93.2" # change as you like
 
-echo "Current blender version: ${BLENDER_VERSION_STRING}"
+echo "Current blender version: $1"
+echo "Current precompiled libs version: $2"
+echo "Current blender python version: $3"
 
-docker build --build-arg BLENDER_VERSION_STRING="$BLENDER_VERSION_STRING" -t vo3xel/blender-python-module:"$BLENDER_VERSION_STRING" -f release-precompiled-deps.Dockerfile .
+docker build --no-cache --build-arg BLENDER_VERSION_STRING="$1" --build-arg BLENDER_PRECOMPILED_LIBS_VERSION_STRING="$2" --build-arg BLENDER_PYTHON_VERSION="$3" -t vo3xel/blender-python-module:"$1" -f release-precompiled-deps.Dockerfile .
 
-docker run -v $PWD/data:/home/blender/data vo3xel/blender-python-module:"$BLENDER_VERSION_STRING" test.py
+docker run -v $PWD/data:/home/blender/data vo3xel/blender-python-module:"$1" test.py
 
 BLENDER_TEST_FILE=./data/my.blend
+
 if test -f "$BLENDER_TEST_FILE"; then
     echo "***********************************************************************"
     echo "Blender python module test OK"
     echo "***********************************************************************"
     docker login
-    docker push vo3xel/blender-python-module:"$BLENDER_VERSION_STRING"
-    docker tag vo3xel/blender-python-module:"$BLENDER_VERSION_STRING" vo3xel/blender-python-module:latest
-    docker push vo3xel/blender-python-module:latest
+    docker push vo3xel/blender-python-module:"$1"
 else
     echo "***********************************************************************"
     echo "Blender python module test failed"
