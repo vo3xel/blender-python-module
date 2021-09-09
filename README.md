@@ -9,7 +9,7 @@ Please copy the python scripts into the `./data` folder and run it with `docker 
 
 ## Example
 ```
-docker run -v $PWD/data:/home/blender/data vo3xel/blender-python-module:2.93.0-alpha test.py
+docker run -v $PWD/data:/home/blender/data vo3xel/blender-python-module:2.93.3 test.py
 ```
 ## References
 * [Blender](https://www.blender.org/)
