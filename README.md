@@ -1,5 +1,5 @@
 # blender-python-module
-This repo builds blender as python module in a docker container.
+This repo builds Blender as Python module packed in a Docker image.
 
 ## Build new Blender image
 Run `./build-nightly-precompiled-deps.sh` to build new Blender image.
