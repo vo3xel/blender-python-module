@@ -27,7 +27,7 @@ RUN apt-get update && apt-get -y install \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt-get update && apt-get -y install python${BLENDER_PYTHON_VERSION} python${BLENDER_PYTHON_VERSION}-dev
+RUN apt-get update && apt-get -y install python${BLENDER_PYTHON_VERSION} python${BLENDER_PYTHON_VERSION}-dev python${BLENDER_PYTHON_VERSION}-distutils
 RUN rm /usr/bin/python3 && ln -s python${BLENDER_PYTHON_VERSION} /usr/bin/python3
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3
 

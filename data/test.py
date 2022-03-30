@@ -1,6 +1,7 @@
 import bpy
 import sys
-bpy.ops.wm.save_as_mainfile(filepath='./my.blend')
+import os
+bpy.ops.wm.save_as_mainfile(filepath=os.path.dirname(__file__) + '/my.blend')
 print("***********************************************************************")
 print("File save OK, blender python module OK")
 print("***********************************************************************")
