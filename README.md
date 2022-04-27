@@ -2,7 +2,7 @@
 This repo builds Blender as Python module packed in a Docker image.
 
 ## License
-The code to build Blender as Docker image is released under MIT license. To use the packed Blender Software please follow the license provided by Blender (https://www.blender.org/about/license).
+The code to build Blender as a Docker image (Dockerfile and scripts) is released under MIT license. To use Blender Software please follow the license provided by Blender (https://www.blender.org/about/license).
 
 ## Build new Blender image
 Run `./build-nightly-precompiled-deps.sh` to build new Blender Docker image from the latest master commit. To build a specific Blender version please use the corresponding `./build-release-x.xx.x.sh` script.
