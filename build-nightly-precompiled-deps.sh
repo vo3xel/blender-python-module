@@ -17,10 +17,6 @@ if test -f "$BLENDER_TEST_FILE"; then
     echo "***********************************************************************"
     echo "Blender python module test OK"
     echo "***********************************************************************"
-    docker login
-    docker push vo3xel/blender-python-module:"nightly-$BLENDER_VERSION_STRING"
-    docker tag vo3xel/blender-python-module:"nightly-$BLENDER_VERSION_STRING" vo3xel/blender-python-module:latest
-    docker push vo3xel/blender-python-module:latest
 else
     echo "***********************************************************************"
     echo "Blender python module test failed"
