@@ -1,6 +1,11 @@
 FROM ubuntu:focal
 
-LABEL maintainer="gh@v3x.xyz"
+LABEL org.opencontainers.image.authors="vo3xel <mail@vo3xel.xyz>"
+LABEL org.opencontainers.image.title="Blender Python module"
+LABEL org.opencontainers.artifact.description="Blender compiled as python module"
+LABEL org.opencontainers.image.source="https://github.com/vo3xel/blender-python-module.git"
+LABEL org.opencontainers.image.licenses="GPL-3.0-only"
+LABEL org.opencontainers.image.version="v1.3.3"
 
 ARG BLENDER_VERSION_STRING
 ARG BLENDER_PRECOMPILED_LIBS_VERSION_STRING
