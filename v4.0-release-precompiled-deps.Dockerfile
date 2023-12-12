@@ -1,7 +1,7 @@
 ARG BLENDER_VERSION_STRING
 
 FROM vo3xel/blender-python-module:${BLENDER_VERSION_STRING}-build-env
-LABEL maintainer="gh@v3x.xyz"+
+LABEL maintainer="gh@v3x.xyz"
 
 WORKDIR /home/blender/blender-git/blender
 RUN make bpy
