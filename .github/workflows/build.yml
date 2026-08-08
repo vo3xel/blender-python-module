@@ -24,6 +24,10 @@ on:
         required: true
         default: all
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   matrix:
     runs-on: ubuntu-latest
@@ -66,6 +70,9 @@ jobs:
       packages: write
     strategy:
       fail-fast: false
+      # Blender's infrastructure throttles many concurrent clones/LFS
+      # downloads from the shared runner IP pool — keep parallelism low.
+      max-parallel: 3
       matrix:
         target: ${{ fromJSON(needs.matrix.outputs.targets) }}
     env:

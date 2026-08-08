@@ -20,7 +20,8 @@ cd "$(dirname "$0")"
 
 IMAGE_REPO="${IMAGE_REPO:-ghcr.io/vo3xel/blender-python-module}"
 VERSIONS_FILE="versions.json"
-BLENDER_GIT_RAW="https://projects.blender.org/blender/blender/raw/branch/main"
+# GitHub mirror — projects.blender.org throttles CI traffic
+BLENDER_GIT_RAW="https://raw.githubusercontent.com/blender/blender/main"
 
 PUSH=0
 RUN_TEST=1

@@ -47,15 +47,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && git lfs install
 
+# Clone from the GitHub mirror: projects.blender.org sits behind aggressive
+# anti-DDoS protection and throttles concurrent CI clones.
 WORKDIR /opt/blender-git
 RUN git clone --branch "${BLENDER_GIT_REF}" --depth 1 \
-        https://projects.blender.org/blender/blender.git
+        https://github.com/blender/blender.git
 
 WORKDIR /opt/blender-git/blender
 
-# Fetch the precompiled libraries (git-lfs submodule lib/linux_x64) that
-# match the checked-out ref.
-RUN python3 ./build_files/utils/make_update.py --no-blender --use-linux-libraries
+# Fetch the precompiled libraries (git-lfs submodule lib/linux_x64) that match
+# the checked-out ref. They are only hosted on projects.blender.org, which may
+# throttle under load — retry with a backoff; git-lfs resumes partial downloads.
+RUN for attempt in 1 2 3; do \
+        python3 ./build_files/utils/make_update.py --no-blender --use-linux-libraries \
+            && exit 0; \
+        echo "make_update failed (attempt ${attempt}), retrying in 90s..."; \
+        sleep 90; \
+    done; exit 1
 
 # Build the bpy module and package it as a wheel.
 RUN make bpy
