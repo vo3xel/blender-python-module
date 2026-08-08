@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     permissions:
-      contents: read
+      contents: write # commit comments on failure
       packages: write
     strategy:
       fail-fast: false
@@ -99,8 +99,32 @@ jobs:
 
       - name: Build, test and push
         run: |
+          set -o pipefail
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            ./build.sh "${{ matrix.target }}"
+            ./build.sh "${{ matrix.target }}" 2>&1 | tee /tmp/build.log
           else
-            ./build.sh --push "${{ matrix.target }}"
+            ./build.sh --push "${{ matrix.target }}" 2>&1 | tee /tmp/build.log
           fi
+
+      # Job logs are only readable with repo admin rights; surface build
+      # failures somewhere public so they can be diagnosed without them.
+      - name: Post failure log as commit comment
+        if: failure() && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, subprocess, urllib.request
+          tail = subprocess.run(["tail", "-n", "150", "/tmp/build.log"],
+                                capture_output=True, text=True).stdout[-50000:]
+          body = ("CI failure for `${{ matrix.target }}` "
+                  "(run ${{ github.run_id }}):\n\n```\n" + tail + "\n```")
+          req = urllib.request.Request(
+              "https://api.github.com/repos/${{ github.repository }}"
+              "/commits/${{ github.sha }}/comments",
+              data=json.dumps({"body": body}).encode(),
+              headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                       "Accept": "application/vnd.github+json"})
+          with urllib.request.urlopen(req) as r:
+              print("comment posted:", r.status)
+          EOF

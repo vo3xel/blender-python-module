@@ -45,10 +45,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libdbus-1-dev \
         linux-libc-dev \
     && rm -rf /var/lib/apt/lists/* \
-    && git lfs install
+    && git lfs install --skip-smudge
 
 # Clone from the GitHub mirror: projects.blender.org sits behind aggressive
-# anti-DDoS protection and throttles concurrent CI clones.
+# anti-DDoS protection and throttles concurrent CI clones. The mirror does
+# not host Blender's LFS objects, hence --skip-smudge above: the clone only
+# fetches pointer files, and make_update.py below pulls the real objects
+# from projects.blender.org via its built-in LFS fallback remote.
 WORKDIR /opt/blender-git
 RUN git clone --branch "${BLENDER_GIT_REF}" --depth 1 \
         https://github.com/blender/blender.git
@@ -60,10 +63,14 @@ WORKDIR /opt/blender-git/blender
 # throttle under load — retry with a backoff; git-lfs resumes partial downloads.
 RUN for attempt in 1 2 3; do \
         python3 ./build_files/utils/make_update.py --no-blender --use-linux-libraries \
-            && exit 0; \
+            && break; \
+        [ "$attempt" = 3 ] && exit 1; \
         echo "make_update failed (attempt ${attempt}), retrying in 90s..."; \
         sleep 90; \
-    done; exit 1
+    done \
+    # materialize the main repo's LFS files (normally done by the repo-update
+    # step that --no-blender skips)
+    && git lfs checkout
 
 # Build the bpy module and package it as a wheel.
 RUN make bpy
