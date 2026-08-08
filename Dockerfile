@@ -18,15 +18,22 @@ ARG PYTHON_VERSION=3.13
 FROM ubuntu:24.04 AS builder
 
 ARG BLENDER_GIT_REF=main
+# Blender 5.1+ requires GCC >= 14; older releases build with Ubuntu 24.04's
+# default GCC 13 (see versions.json).
+ARG GCC_VERSION=13
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
+    LC_ALL=C.UTF-8 \
+    CC=gcc-${GCC_VERSION} \
+    CXX=g++-${GCC_VERSION}
 
 # Basic build environment, per
 # https://developer.blender.org/docs/handbook/building_blender/linux/
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
+        gcc-${GCC_VERSION} \
+        g++-${GCC_VERSION} \
         ca-certificates \
         cmake \
         git \

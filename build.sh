@@ -42,23 +42,28 @@ list_versions() {
     python3 -c "
 import json
 for e in json.load(open('$VERSIONS_FILE'))['versions']:
-    print(e['version'], e['python'])"
+    print(e['version'], e['python'], e.get('gcc', '13'))"
 }
 
 python_for_version() {
     list_versions | awk -v v="$1" '$1 == v { print $2 }'
 }
 
+gcc_for_version() {
+    list_versions | awk -v v="$1" '$1 == v { print $3 }'
+}
+
 latest_version() {
     list_versions | awk 'END { print $1 }'
 }
 
-# Detect the nightly version string (e.g. 5.3.0-alpha) and bundled Python
-# version directly from Blender's main branch.
+# Detect the nightly version string (e.g. 5.3.0-alpha), bundled Python
+# version and required GCC directly from Blender's main branch.
 detect_nightly() {
-    local header versions_cmake version patch cycle
+    local header versions_cmake cmakelists version patch cycle
     header=$(curl -fsSL "$BLENDER_GIT_RAW/source/blender/blenkernel/BKE_blender_version.h")
     versions_cmake=$(curl -fsSL "$BLENDER_GIT_RAW/build_files/build_environment/cmake/versions.cmake")
+    cmakelists=$(curl -fsSL "$BLENDER_GIT_RAW/CMakeLists.txt")
 
     version=$(echo "$header" | awk '/#define BLENDER_VERSION /       { print $3 }')
     patch=$(echo "$header"   | awk '/#define BLENDER_VERSION_PATCH / { print $3 }')
@@ -66,6 +71,9 @@ detect_nightly() {
 
     NIGHTLY_VERSION_STRING="$((version / 100)).$((version % 100)).${patch}-${cycle}"
     NIGHTLY_PYTHON=$(echo "$versions_cmake" | sed -n 's/^set(PYTHON_SHORT_VERSION \(.*\))$/\1/p')
+    NIGHTLY_GCC=$(echo "$cmakelists" \
+        | sed -n 's/.*minimum supported version of GCC is \([0-9]*\).*/\1/p' | head -1)
+    NIGHTLY_GCC="${NIGHTLY_GCC:-14}"
 
     [ -n "$NIGHTLY_PYTHON" ] || { echo "error: could not detect nightly Python version" >&2; exit 1; }
 }
@@ -89,10 +97,10 @@ smoke_test() {
     fi
 }
 
-# build_image <git-ref> <python-version> <version-string> <tag>...
+# build_image <git-ref> <python-version> <gcc-version> <version-string> <tag>...
 build_image() {
-    local git_ref="$1" python_version="$2" version_string="$3"
-    shift 3
+    local git_ref="$1" python_version="$2" gcc_version="$3" version_string="$4"
+    shift 4
     local tags=("$@")
 
     local tag_args=()
@@ -100,10 +108,11 @@ build_image() {
         tag_args+=(-t "$IMAGE_REPO:$t")
     done
 
-    echo "==> Building Blender $version_string (ref: $git_ref, Python $python_version)"
+    echo "==> Building Blender $version_string (ref: $git_ref, Python $python_version, GCC $gcc_version)"
     docker build \
         --build-arg BLENDER_GIT_REF="$git_ref" \
         --build-arg PYTHON_VERSION="$python_version" \
+        --build-arg GCC_VERSION="$gcc_version" \
         --build-arg BLENDER_VERSION="$version_string" \
         "${tag_args[@]}" \
         .
@@ -119,8 +128,9 @@ build_image() {
 
 build_release() {
     local version="$1"
-    local python_version
+    local python_version gcc_version
     python_version=$(python_for_version "$version")
+    gcc_version=$(gcc_for_version "$version")
     [ -n "$python_version" ] || {
         echo "error: unknown version '$version' (see './build.sh list')" >&2; exit 1;
     }
@@ -128,20 +138,20 @@ build_release() {
     local tags=("$version" "${version%.*}")
     [ "$version" = "$(latest_version)" ] && tags+=("latest")
 
-    build_image "v$version" "$python_version" "$version" "${tags[@]}"
+    build_image "v$version" "$python_version" "$gcc_version" "$version" "${tags[@]}"
 }
 
 build_nightly() {
     detect_nightly
-    echo "==> Nightly is Blender $NIGHTLY_VERSION_STRING (Python $NIGHTLY_PYTHON)"
-    build_image "main" "$NIGHTLY_PYTHON" "$NIGHTLY_VERSION_STRING" \
+    echo "==> Nightly is Blender $NIGHTLY_VERSION_STRING (Python $NIGHTLY_PYTHON, GCC $NIGHTLY_GCC)"
+    build_image "main" "$NIGHTLY_PYTHON" "$NIGHTLY_GCC" "$NIGHTLY_VERSION_STRING" \
         "nightly" "nightly-$NIGHTLY_VERSION_STRING"
 }
 
 for target in "${TARGETS[@]}"; do
     case "$target" in
         list)
-            list_versions | awk '{ printf "%-10s (Python %s)\n", $1, $2 }'
+            list_versions | awk '{ printf "%-10s (Python %s, GCC %s)\n", $1, $2, $3 }'
             echo "nightly    (auto-detected from main)"
             ;;
         all)
