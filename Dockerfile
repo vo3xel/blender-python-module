@@ -118,10 +118,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libgl1 \
         libegl1 \
         libsm6 \
+        libice6 \
+        libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN --mount=type=bind,from=builder,source=/wheels,target=/wheels \
     pip install --no-cache-dir /wheels/*.whl
+
+# Fail the image build (not the first user) if native deps are missing:
+# list every unresolved shared library, then prove bpy imports.
+RUN find /usr/local/lib/python*/site-packages -name '*.so*' -print0 \
+        | xargs -0 ldd 2>/dev/null | grep 'not found' | sort -u; \
+    python3 -c "import bpy; print('bpy OK:', bpy.app.version_string)"
 
 # chmod: trixie creates homes with 0700, which would lock out containers
 # started with a custom --user (as the smoke test does)
