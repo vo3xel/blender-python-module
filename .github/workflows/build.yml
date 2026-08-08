@@ -1,0 +1,99 @@
+name: Build Blender Python module images
+
+on:
+  push:
+    branches: [develop, main]
+    paths:
+      - Dockerfile
+      - versions.json
+      - build.sh
+      - .github/workflows/build.yml
+  pull_request:
+    paths:
+      - Dockerfile
+      - versions.json
+      - build.sh
+      - .github/workflows/build.yml
+  schedule:
+    # Nightly build from Blender's main branch
+    - cron: "30 2 * * *"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "What to build: 'all', 'nightly', or a specific version (e.g. 4.5.12)"
+        required: true
+        default: all
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.set.outputs.targets }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set
+        run: |
+          case "${{ github.event_name }}" in
+            schedule)
+              targets='["nightly"]'
+              ;;
+            workflow_dispatch)
+              input='${{ github.event.inputs.target }}'
+              if [ "$input" = "all" ]; then
+                targets=$(python3 -c "
+          import json
+          v = [e['version'] for e in json.load(open('versions.json'))['versions']]
+          print(json.dumps(v + ['nightly']))")
+              else
+                targets=$(python3 -c "import json; print(json.dumps(['$input']))")
+              fi
+              ;;
+            *)
+              targets=$(python3 -c "
+          import json
+          v = [e['version'] for e in json.load(open('versions.json'))['versions']]
+          print(json.dumps(v + ['nightly']))")
+              ;;
+          esac
+          echo "targets=$targets" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.matrix.outputs.targets) }}
+    env:
+      IMAGE_REPO: ghcr.io/${{ github.repository_owner }}/blender-python-module
+    steps:
+      - uses: actions/checkout@v4
+
+      # Blender source + precompiled libs + build tree need ~40 GB;
+      # the stock runner only has ~14 GB free.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          sudo docker image prune --all --force
+          df -h /
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build, test and push
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            ./build.sh "${{ matrix.target }}"
+          else
+            ./build.sh --push "${{ matrix.target }}"
+          fi
