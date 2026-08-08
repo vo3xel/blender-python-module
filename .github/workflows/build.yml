@@ -2,7 +2,7 @@ name: Build Blender Python module images
 
 on:
   push:
-    branches: [develop, main]
+    branches: [develop, main, debug/**]
     paths:
       - Dockerfile
       - versions.json
@@ -37,6 +37,11 @@ jobs:
       - uses: actions/checkout@v4
       - id: set
         run: |
+          if [[ "${{ github.ref }}" == refs/heads/debug/* ]]; then
+            # debug branches build a single hardcoded target
+            echo 'targets=["4.2.23"]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           case "${{ github.event_name }}" in
             schedule)
               targets='["nightly"]'
@@ -100,7 +105,8 @@ jobs:
       - name: Build, test and push
         run: |
           set -o pipefail
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          if [ "${{ github.event_name }}" = "pull_request" ] \
+             || [[ "${{ github.ref }}" == refs/heads/debug/* ]]; then
             ./build.sh "${{ matrix.target }}" 2>&1 | tee /tmp/build.log
           else
             ./build.sh --push "${{ matrix.target }}" 2>&1 | tee /tmp/build.log
@@ -114,11 +120,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'EOF'
-          import json, os, subprocess, urllib.request
-          tail = subprocess.run(["tail", "-n", "150", "/tmp/build.log"],
-                                capture_output=True, text=True).stdout[-50000:]
+          import json, os, re, urllib.request
+          with open("/tmp/build.log", errors="replace") as f:
+              lines = f.read().splitlines()
+          pat = re.compile(r"error:|internal compiler|Killed|killed signal|"
+                           r"undefined reference|No such file|CMake Error", re.I)
+          hits = [i for i, l in enumerate(lines) if pat.search(l)]
+          parts = []
+          for i in hits[:10]:
+              parts.append("\n".join(lines[max(0, i - 3):i + 10]))
+          report = ("=== error context ===\n" + "\n...\n".join(parts) +
+                    "\n\n=== tail ===\n" + "\n".join(lines[-40:]))[-55000:]
           body = ("CI failure for `${{ matrix.target }}` "
-                  "(run ${{ github.run_id }}):\n\n```\n" + tail + "\n```")
+                  "(run ${{ github.run_id }}):\n\n```\n" + report + "\n```")
           req = urllib.request.Request(
               "https://api.github.com/repos/${{ github.repository }}"
               "/commits/${{ github.sha }}/comments",

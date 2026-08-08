@@ -32,6 +32,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
         git-lfs \
         python3 \
+        python3-setuptools \
+        python3-wheel \
         libx11-dev \
         libxxf86vm-dev \
         libxcursor-dev \
@@ -58,6 +60,22 @@ RUN git clone --branch "${BLENDER_GIT_REF}" --depth 1 \
 
 WORKDIR /opt/blender-git/blender
 
+# Fetch and materialize the main repo's LFS objects (icons, fonts, datafiles)
+# from projects.blender.org. make_update.py's own LFS fallback does not
+# download them on every version when run with --no-blender, so do it
+# explicitly and verify that no pointer files remain.
+RUN git remote add lfs-fallback https://projects.blender.org/blender/blender.git \
+    && for attempt in 1 2 3; do \
+        git lfs fetch lfs-fallback && break; \
+        [ "$attempt" = 3 ] && exit 1; \
+        echo "LFS fetch failed (attempt ${attempt}), retrying in 60s..."; \
+        sleep 60; \
+    done \
+    && git lfs checkout \
+    && if git lfs ls-files | grep -E '^[0-9a-f]+ - ' >/dev/null; then \
+        echo "ERROR: some LFS files are still pointers"; exit 1; \
+    fi
+
 # Fetch the precompiled libraries (git-lfs submodule lib/linux_x64) that match
 # the checked-out ref. They are only hosted on projects.blender.org, which may
 # throttle under load — retry with a backoff; git-lfs resumes partial downloads.
@@ -67,10 +85,7 @@ RUN for attempt in 1 2 3; do \
         [ "$attempt" = 3 ] && exit 1; \
         echo "make_update failed (attempt ${attempt}), retrying in 90s..."; \
         sleep 90; \
-    done \
-    # materialize the main repo's LFS files (normally done by the repo-update
-    # step that --no-blender skips)
-    && git lfs checkout
+    done
 
 # Build the bpy module and package it as a wheel.
 RUN make bpy
