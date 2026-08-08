@@ -123,9 +123,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN --mount=type=bind,from=builder,source=/wheels,target=/wheels \
     pip install --no-cache-dir /wheels/*.whl
 
+# chmod: trixie creates homes with 0700, which would lock out containers
+# started with a custom --user (as the smoke test does)
 RUN useradd --create-home blender \
     && mkdir -p /home/blender/data \
-    && chown -R blender:blender /home/blender
+    && chown -R blender:blender /home/blender \
+    && chmod 755 /home/blender /home/blender/data
 USER blender
 WORKDIR /home/blender/data
 
