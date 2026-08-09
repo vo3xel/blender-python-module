@@ -25,17 +25,39 @@ on:
         default: all
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   matrix:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # push versions.json updates
     outputs:
       targets: ${{ steps.set.outputs.targets }}
     steps:
       - uses: actions/checkout@v4
+
+      # The nightly schedule doubles as release radar: pick up new Blender
+      # releases, commit the updated versions.json, and build them right away.
+      - name: Check for new Blender releases
+        id: releases
+        if: github.event_name == 'schedule'
+        run: |
+          new=$(python3 scripts/update_versions.py)
+          echo "new=$new" >> "$GITHUB_OUTPUT"
+          echo "New releases: $new"
+          if [ "$new" != "[]" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add versions.json
+            git commit -m "Add new Blender release(s): $(echo "$new" | tr -d '[]"')"
+            git push
+          fi
+
       - id: set
+        env:
+          NEW_RELEASES: ${{ steps.releases.outputs.new }}
         run: |
           if [[ "${{ github.ref }}" == refs/heads/debug/* ]]; then
             # debug branches build a single hardcoded target
@@ -44,7 +66,10 @@ jobs:
           fi
           case "${{ github.event_name }}" in
             schedule)
-              targets='["nightly"]'
+              targets=$(python3 -c "
+          import json, os
+          new = json.loads(os.environ.get('NEW_RELEASES') or '[]')
+          print(json.dumps(new + ['nightly']))")
               ;;
             workflow_dispatch)
               input='${{ github.event.inputs.target }}'
@@ -83,7 +108,11 @@ jobs:
     env:
       IMAGE_REPO: ghcr.io/${{ github.repository_owner }}/blender-python-module
     steps:
+      # Check out the branch tip (not the pinned trigger sha) so scheduled
+      # runs see the versions.json entries the matrix job just pushed.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       # Blender source + precompiled libs + build tree need ~40 GB;
       # the stock runner only has ~14 GB free.

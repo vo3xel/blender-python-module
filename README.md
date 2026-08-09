@@ -28,7 +28,7 @@ Release images are tagged `X.Y.Z` and `X.Y`, the newest release is also tagged `
 
 ## Supported versions
 
-The buildable releases and their bundled Python versions are defined in [versions.json](versions.json):
+The buildable releases and their bundled Python versions are defined in [versions.json](versions.json), which is kept up to date automatically (see [Updating the version matrix](#updating-the-version-matrix)). At the time of writing:
 
 | Blender | Python |
 |---------|--------|
@@ -82,7 +82,9 @@ Each build finishes with a smoke test ([data/test.py](data/test.py)) that import
 
 ## Updating the version matrix
 
-When a new Blender release is out, add one line to `versions.json` (the bundled Python version is listed on the [bpy PyPI page](https://pypi.org/project/bpy/)). Nothing else needs to change — the nightly build tracks `main` automatically.
+The version matrix updates itself: the daily scheduled run executes [scripts/update_versions.py](scripts/update_versions.py), which compares `versions.json` against Blender's release tags, detects the bundled Python and required GCC for anything new directly from the tag's build files, commits the updated matrix, and builds the new versions in the same run. The nightly build tracks `main` automatically as well.
+
+Manual edits to `versions.json` still work — push one and CI rebuilds the matrix.
 
 ## License
 

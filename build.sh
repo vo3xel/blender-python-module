@@ -39,9 +39,12 @@ done
 [ ${#TARGETS[@]} -gt 0 ] || { echo "error: no target given (try './build.sh list')" >&2; exit 1; }
 
 list_versions() {
+    # sorted by version so 'latest_version' is order-independent
     python3 -c "
 import json
-for e in json.load(open('$VERSIONS_FILE'))['versions']:
+entries = json.load(open('$VERSIONS_FILE'))['versions']
+entries.sort(key=lambda e: tuple(map(int, e['version'].split('.'))))
+for e in entries:
     print(e['version'], e['python'], e.get('gcc', '13'))"
 }
 
