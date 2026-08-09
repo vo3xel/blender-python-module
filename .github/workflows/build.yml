@@ -1,0 +1,173 @@
+name: Build Blender Python module images
+
+on:
+  push:
+    branches: [develop, main, debug/**]
+    paths:
+      - Dockerfile
+      - versions.json
+      - build.sh
+      - .github/workflows/build.yml
+  pull_request:
+    paths:
+      - Dockerfile
+      - versions.json
+      - build.sh
+      - .github/workflows/build.yml
+  schedule:
+    # Nightly build from Blender's main branch
+    - cron: "30 2 * * *"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "What to build: 'all', 'nightly', or a specific version (e.g. 4.5.12)"
+        required: true
+        default: all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push versions.json updates
+    outputs:
+      targets: ${{ steps.set.outputs.targets }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # The nightly schedule doubles as release radar: pick up new Blender
+      # releases, commit the updated versions.json, and build them right away.
+      - name: Check for new Blender releases
+        id: releases
+        if: github.event_name == 'schedule'
+        run: |
+          new=$(python3 scripts/update_versions.py)
+          echo "new=$new" >> "$GITHUB_OUTPUT"
+          echo "New releases: $new"
+          if [ "$new" != "[]" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add versions.json
+            git commit -m "Add new Blender release(s): $(echo "$new" | tr -d '[]"')"
+            git push
+          fi
+
+      - id: set
+        env:
+          NEW_RELEASES: ${{ steps.releases.outputs.new }}
+        run: |
+          if [[ "${{ github.ref }}" == refs/heads/debug/* ]]; then
+            # debug branches build a single hardcoded target
+            echo 'targets=["4.2.23"]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          case "${{ github.event_name }}" in
+            schedule)
+              targets=$(python3 -c "
+          import json, os
+          new = json.loads(os.environ.get('NEW_RELEASES') or '[]')
+          print(json.dumps(new + ['nightly']))")
+              ;;
+            workflow_dispatch)
+              input='${{ github.event.inputs.target }}'
+              if [ "$input" = "all" ]; then
+                targets=$(python3 -c "
+          import json
+          v = [e['version'] for e in json.load(open('versions.json'))['versions']]
+          print(json.dumps(v + ['nightly']))")
+              else
+                targets=$(python3 -c "import json; print(json.dumps(['$input']))")
+              fi
+              ;;
+            *)
+              targets=$(python3 -c "
+          import json
+          v = [e['version'] for e in json.load(open('versions.json'))['versions']]
+          print(json.dumps(v + ['nightly']))")
+              ;;
+          esac
+          echo "targets=$targets" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: write # commit comments on failure
+      packages: write
+    strategy:
+      fail-fast: false
+      # Blender's infrastructure throttles many concurrent clones/LFS
+      # downloads from the shared runner IP pool — keep parallelism low.
+      max-parallel: 3
+      matrix:
+        target: ${{ fromJSON(needs.matrix.outputs.targets) }}
+    env:
+      IMAGE_REPO: ghcr.io/${{ github.repository_owner }}/blender-python-module
+    steps:
+      # Check out the branch tip (not the pinned trigger sha) so scheduled
+      # runs see the versions.json entries the matrix job just pushed.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      # Blender source + precompiled libs + build tree need ~40 GB;
+      # the stock runner only has ~14 GB free.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          sudo docker image prune --all --force
+          df -h /
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build, test and push
+        run: |
+          set -o pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ] \
+             || [[ "${{ github.ref }}" == refs/heads/debug/* ]]; then
+            ./build.sh "${{ matrix.target }}" 2>&1 | tee /tmp/build.log
+          else
+            ./build.sh --push "${{ matrix.target }}" 2>&1 | tee /tmp/build.log
+          fi
+
+      # Job logs are only readable with repo admin rights; surface build
+      # failures somewhere public so they can be diagnosed without them.
+      - name: Post failure log as commit comment
+        if: failure() && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, re, urllib.request
+          with open("/tmp/build.log", errors="replace") as f:
+              lines = f.read().splitlines()
+          pat = re.compile(r"error:|internal compiler|Killed|killed signal|"
+                           r"undefined reference|No such file|CMake Error", re.I)
+          hits = [i for i, l in enumerate(lines) if pat.search(l)]
+          parts = []
+          for i in hits[:10]:
+              parts.append("\n".join(lines[max(0, i - 3):i + 10]))
+          report = ("=== error context ===\n" + "\n...\n".join(parts) +
+                    "\n\n=== tail ===\n" + "\n".join(lines[-40:]))[-55000:]
+          body = ("CI failure for `${{ matrix.target }}` "
+                  "(run ${{ github.run_id }}):\n\n```\n" + report + "\n```")
+          req = urllib.request.Request(
+              "https://api.github.com/repos/${{ github.repository }}"
+              "/commits/${{ github.sha }}/comments",
+              data=json.dumps({"body": body}).encode(),
+              headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                       "Accept": "application/vnd.github+json"})
+          with urllib.request.urlopen(req) as r:
+              print("comment posted:", r.status)
+          EOF
