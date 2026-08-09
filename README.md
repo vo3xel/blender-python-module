@@ -80,6 +80,8 @@ Each build finishes with a smoke test ([data/test.py](data/test.py)) that import
 
 [.github/workflows/build.yml](.github/workflows/build.yml) builds the full matrix from `versions.json` on every relevant push and builds the nightly image on a daily schedule. Images are pushed to the GitHub Container Registry (`ghcr.io`) using the workflow's built-in `GITHUB_TOKEN` — no extra secrets are needed.
 
+CI uses a registry build cache (`cache-<target>` tags on the same repository), so rebuilds of unchanged versions skip the hour-long compile and finish in minutes. The clone layer is keyed on the upstream commit sha, which keeps release caches immutable while the nightly re-clones whenever Blender's `main` moves. Every build — cached or not — still ends with the smoke test.
+
 ## Updating the version matrix
 
 The version matrix updates itself: the daily scheduled run executes [scripts/update_versions.py](scripts/update_versions.py), which compares `versions.json` against Blender's release tags, detects the bundled Python and required GCC for anything new directly from the tag's build files, commits the updated matrix, and builds the new versions in the same run. The nightly build tracks `main` automatically as well.

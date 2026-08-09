@@ -11,6 +11,9 @@
 # Options:
 #   --push       push images to the registry after a successful test
 #   --no-test    skip the smoke test
+#   --cache      use a registry build cache at $IMAGE_REPO:cache-<target>
+#                (cache is written back only together with --push; requires a
+#                docker-container buildx builder for writing)
 #
 # Environment:
 #   IMAGE_REPO   image repository (default: ghcr.io/vo3xel/blender-python-module)
@@ -25,13 +28,15 @@ BLENDER_GIT_RAW="https://raw.githubusercontent.com/blender/blender/main"
 
 PUSH=0
 RUN_TEST=1
+USE_CACHE=0
 TARGETS=()
 
 for arg in "$@"; do
     case "$arg" in
         --push)    PUSH=1 ;;
         --no-test) RUN_TEST=0 ;;
-        -h|--help) sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        --cache)   USE_CACHE=1 ;;
+        -h|--help) sed -n '2,/^[^#]/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
         *)         TARGETS+=("$arg") ;;
     esac
 done
@@ -100,6 +105,13 @@ smoke_test() {
     fi
 }
 
+# Commit sha a ref points to on the GitHub mirror. Part of the clone layer's
+# cache key: keeps release tags fully cached while busting stale "main".
+resolve_sha() {
+    git ls-remote https://github.com/blender/blender.git \
+        "refs/tags/$1" "refs/heads/$1" | awk 'NR == 1 { print $1 }'
+}
+
 # build_image <git-ref> <python-version> <gcc-version> <version-string> <tag>...
 build_image() {
     local git_ref="$1" python_version="$2" gcc_version="$3" version_string="$4"
@@ -111,12 +123,27 @@ build_image() {
         tag_args+=(-t "$IMAGE_REPO:$t")
     done
 
-    echo "==> Building Blender $version_string (ref: $git_ref, Python $python_version, GCC $gcc_version)"
-    docker build \
+    local cache_args=()
+    if [ "$USE_CACHE" -eq 1 ]; then
+        local cache_ref="$IMAGE_REPO:cache-${tags[0]}"
+        cache_args+=(--cache-from "type=registry,ref=$cache_ref")
+        # writing the cache needs registry credentials — couple it to --push
+        [ "$PUSH" -eq 1 ] && cache_args+=(
+            --cache-to "type=registry,ref=$cache_ref,mode=max,compression=zstd,ignore-error=true")
+    fi
+
+    local blender_sha
+    blender_sha=$(resolve_sha "$git_ref")
+
+    echo "==> Building Blender $version_string (ref: $git_ref @ ${blender_sha:-unknown}, Python $python_version, GCC $gcc_version)"
+    docker buildx build \
+        --load \
         --build-arg BLENDER_GIT_REF="$git_ref" \
+        --build-arg BLENDER_SHA="${blender_sha:-unknown}" \
         --build-arg PYTHON_VERSION="$python_version" \
         --build-arg GCC_VERSION="$gcc_version" \
         --build-arg BLENDER_VERSION="$version_string" \
+        "${cache_args[@]}" \
         "${tag_args[@]}" \
         .
 

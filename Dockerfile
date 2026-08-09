@@ -56,13 +56,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && git lfs install --skip-smudge
 
+# Upstream commit the ref resolves to. Referencing it in the clone RUN makes
+# it part of the layer cache key, so registry-cached builds of "main" are
+# invalidated exactly when upstream moves while immutable release tags stay
+# fully cached.
+ARG BLENDER_SHA=unknown
+
 # Clone from the GitHub mirror: projects.blender.org sits behind aggressive
 # anti-DDoS protection and throttles concurrent CI clones. The mirror does
 # not host Blender's LFS objects, hence --skip-smudge above: the clone only
 # fetches pointer files, and make_update.py below pulls the real objects
 # from projects.blender.org via its built-in LFS fallback remote.
 WORKDIR /opt/blender-git
-RUN git clone --branch "${BLENDER_GIT_REF}" --depth 1 \
+RUN echo "Building ${BLENDER_GIT_REF} @ ${BLENDER_SHA}" \
+    && git clone --branch "${BLENDER_GIT_REF}" --depth 1 \
         https://github.com/blender/blender.git
 
 WORKDIR /opt/blender-git/blender
