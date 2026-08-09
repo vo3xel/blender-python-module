@@ -2,7 +2,7 @@ name: Build Blender Python module images
 
 on:
   push:
-    branches: [develop, main, debug/**]
+    branches: [main, debug/**]
     paths:
       - Dockerfile
       - versions.json
