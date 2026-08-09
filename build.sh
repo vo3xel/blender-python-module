@@ -150,8 +150,14 @@ build_image() {
     [ "$RUN_TEST" -eq 1 ] && smoke_test "$IMAGE_REPO:${tags[0]}"
 
     if [ "$PUSH" -eq 1 ]; then
+        # registry hiccups shouldn't sink an hour-long build — retry
         for t in "${tags[@]}"; do
-            docker push "$IMAGE_REPO:$t"
+            for attempt in 1 2 3; do
+                docker push "$IMAGE_REPO:$t" && break
+                [ "$attempt" = 3 ] && exit 1
+                echo "push of $t failed (attempt ${attempt}), retrying in 30s..."
+                sleep 30
+            done
         done
     fi
 }
