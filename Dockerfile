@@ -7,7 +7,9 @@
 #
 # Build args:
 #   BLENDER_GIT_REF  git tag or branch, e.g. "v4.5.12" or "main"
+#   BLENDER_SHA      commit the ref resolves to (cache key for the clone layer)
 #   PYTHON_VERSION   Python version bundled by that Blender release, e.g. "3.11"
+#   GCC_VERSION      compiler major version to build with (5.1+ needs >= 14)
 #   BLENDER_VERSION  human-readable version used for labels, e.g. "4.5.12"
 
 ARG PYTHON_VERSION=3.13
