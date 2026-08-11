@@ -1,7 +1,7 @@
 # blender-python-module
 
 [![Build](https://github.com/vo3xel/blender-python-module/actions/workflows/build.yml/badge.svg)](https://github.com/vo3xel/blender-python-module/actions/workflows/build.yml)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5167140.svg)](https://doi.org/10.5281/zenodo.5167140)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.5167140-blue.svg)](https://doi.org/10.5281/zenodo.5167140)
 
 Blender compiled as Python module ([`bpy`](https://docs.blender.org/api/current/info_advanced_blender_as_bpy.html)), packed in a slim Docker image — for every current Blender release and the nightly `main` branch.
 
@@ -107,4 +107,4 @@ The iDev40 project has received funding from the ECSEL Joint Undertaking (JU) un
 
 This repository is released as publication on Zenodo, if this work is used within other projects it is required to cite this work with the following DOI:
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5167140.svg)](https://doi.org/10.5281/zenodo.5167140)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.5167140-blue.svg)](https://doi.org/10.5281/zenodo.5167140)
